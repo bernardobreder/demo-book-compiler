@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <lightning.h>
+
+static jit_state_t *_jit;
+
+typedef int (*pifv)();
+
+int main(int argc, char *argv[]) {
+	pifv program;
+	init_jit(0);
+	_jit = jit_new_state();
+	{
+		jit_node_t* label_func_a = jit_label();
+		jit_prolog ();
+		jit_node_t* ref_a = jit_jmpi();
+		jit_epilog();
+
+		jit_node_t* label_func_b = jit_label();
+		jit_prolog ();
+		jit_node_t* ref_b = jit_jmpi();
+		jit_epilog();
+
+		jit_node_t* label = jit_note(__FILE__, __LINE__);
+		jit_prolog ();
+		jit_movi(JIT_R0, 2);
+		jit_prepare();
+		jit_node_t* call_a = jit_finishi(NULL);
+		jit_patch_at(call_a, label_func_a);
+		jit_retval(JIT_R0);
+		jit_retr(JIT_R0);
+
+		jit_patch(ref_a);
+		jit_prepare();
+		jit_node_t* call_b = jit_finishi(NULL);
+		jit_patch_at(call_b, label_func_b);
+		jit_retval(JIT_R0);
+		jit_retr(JIT_R0);
+
+		jit_patch(ref_b);
+		jit_movi(JIT_R0, 3);
+		jit_retr(JIT_R0);
+
+		jit_emit();
+		program = (pifv) jit_address(label);
+	}
+	jit_clear_state();
+	finish_jit();
+	printf("result = %d\n", program());
+	jit_destroy_state();
+	return 0;
+}

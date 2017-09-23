@@ -1,0 +1,56 @@
+#include <stdio.h>
+#include <lightning.h>
+
+typedef long (*pvfi)();
+
+int main(int argc, char *argv[]) {
+	unsigned char c[1024];
+	jit_node_t *in, *fn;
+	init_jit(0);
+	jit_state_t* _jit = jit_new_state();
+	fn = jit_note(NULL, 0);
+	jit_prolog();
+	int stack_base, stack_ptr;
+	stack_ptr = stack_base = jit_allocai (32 * sizeof (int));
+	in = jit_arg();
+	//	{
+	*c = 1;
+	int a = *c + 2;
+	printf("%d\n", a);
+	jit_movi_d(JIT_F0, 123456789123456789);
+	jit_retr_d(JIT_F0);
+	//	}
+	{
+		//		void* memory[1024];
+		//		int a[3];
+		//		a[0] = 1;
+		//		a[1] = 2;
+		//		a[2] = 3;
+		//		memory[0] = a;
+		//		jit_movi(JIT_F1, (long )a);
+		//		jit_ldxi_i(JIT_F0, JIT_F1, 2 * sizeof(int));
+		//		jit_retr(JIT_F0);
+	}
+	//	{
+	//		jit_movi_d(JIT_F0, 1);
+	//		jit_movi_d(JIT_F1, 2);
+	//		jit_divr_d(JIT_F0, JIT_F0, JIT_F1);
+	//		jit_retr_d(JIT_F0);
+	//		// Retorna 0.5
+	//	}
+	//	{
+	//		jit_movi(JIT_F4, 0x3FFFFFFFFFFFFFFFL);
+	//		jit_movi(JIT_F5, 0);
+	//		jit_addr(JIT_F4, JIT_F4, JIT_F5);
+	//		jit_retr(JIT_F4);
+	//		// Retorna 0.5
+	//	}
+	jit_epilog();
+	jit_emit();
+	pvfi myFunction = (pvfi) jit_address(fn);
+	jit_clear_state();
+	finish_jit();
+	printf("%ld\n", myFunction());
+
+	return 0;
+}
